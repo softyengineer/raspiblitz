@@ -455,38 +455,6 @@ if [ ${installed} -lt 1 ]; then
   exit 1
 fi
 
-if [ "${baseImage}" = "raspbian" ]; then
-  echo ""
-  echo "*** LITECOIN ***"
-  # based on https://medium.com/@jason.hcwong/litecoin-lightning-with-raspberry-pi-3-c3b931a82347
-
-  # set version (change if update is available)
-  litecoinVersion="0.17.1"
-  litecoinSHA256="7e6f5a1f0b190de01aa20ecf5c5a2cc5a64eb7ede0806bcba983bcd803324d8a"
-  cd /home/admin/download
-
-  # download
-  binaryName="litecoin-${litecoinVersion}-arm-linux-gnueabihf.tar.gz"
-  sudo -u admin wget https://download.litecoin.org/litecoin-${litecoinVersion}/linux/${binaryName}
-
-  # check download
-  binaryChecksum=$(sha256sum ${binaryName} | cut -d " " -f1)
-  if [ "${binaryChecksum}" != "${litecoinSHA256}" ]; then
-    echo "!!! FAIL !!! Downloaded LITECOIN BINARY not matching SHA256 checksum: ${litecoinSHA256}"
-    exit 1
-  fi
-
-  # install
-  sudo -u admin tar -xvf ${binaryName}
-  sudo install -m 0755 -o root -g root -t /usr/local/bin litecoin-${litecoinVersion}/bin/*
-  installed=$(sudo -u admin litecoind --version | grep "${litecoinVersion}" -c)
-  if [ ${installed} -lt 1 ]; then
-    echo ""
-    echo "!!! BUILD FAILED --> Was not able to install litecoind version(${litecoinVersion})"
-    exit 1
-  fi
-fi
-
 # "*** LND ***"
 ## based on https://github.com/Stadicus/guides/blob/master/raspibolt/raspibolt_40_lnd.md#lightning-lnd
 ## see LND releases: https://github.com/lightningnetwork/lnd/releases
@@ -646,34 +614,6 @@ sudo bash -c "echo 'source /home/admin/_commands.sh' >> /home/admin/.bashrc"
 sudo bash -c "echo '# automatically start main menu for admin' >> /home/admin/.bashrc"
 sudo bash -c "echo './00raspiblitz.sh' >> /home/admin/.bashrc"
 
-if [ "${baseImage}" = "raspbian" ] || [ "${baseImage}" = "armbian" ] || [ "${baseImage}" = "ubuntu" ]; then
-  # bash autostart for pi
-  # run as exec to dont allow easy physical access by keyboard
-  # see https://github.com/rootzoll/raspiblitz/issues/54
-  sudo bash -c 'echo "# automatic start the LCD info loop" >> /home/pi/.bashrc'
-  sudo bash -c 'echo "SCRIPT=/home/admin/00infoLCD.sh" >> /home/pi/.bashrc'
-  sudo bash -c 'echo "# replace shell with script => logout when exiting script" >> /home/pi/.bashrc'
-  sudo bash -c 'echo "exec \$SCRIPT" >> /home/pi/.bashrc'
-fi
-if [ "${baseImage}" = "raspbian" ]; then
-  # create /home/admin/setup.sh - which will get executed after reboot by autologin pi user
-  cat > /home/admin/setup.sh <<EOF
-
-  # make LCD screen rotation correct
-  sudo sed --in-place -i "57s/.*/dtoverlay=tft35a:rotate=270/" /boot/config.txt
-
-EOF
-  sudo chmod +x /home/admin/setup.sh
-fi
-
-if [ "${baseImage}" = "dietpi" ]; then
-  # bash autostart for dietpi
-  sudo bash -c 'echo "# automatic start the LCD info loop" >> /home/dietpi/.bashrc'
-  sudo bash -c 'echo "SCRIPT=/home/admin/00infoLCD.sh" >> /home/dietpi/.bashrc'
-  sudo bash -c 'echo "# replace shell with script => logout when exiting script" >> /home/dietpi/.bashrc'
-  sudo bash -c 'echo "exec \$SCRIPT" >> /home/dietpi/.bashrc'
-fi
-
 echo ""
 echo "*** HARDENING ***"
 # based on https://github.com/Stadicus/guides/blob/master/raspibolt/raspibolt_20_pi.md#hardening-your-pi
@@ -717,8 +657,10 @@ echo "Maybe take the chance and look thru the output above if you can spot any e
 echo ""
 echo "After final reboot - your SD Card Image is ready."
 echo ""
-echo "IMPORTANT IF WANT TO MAKE A RELEASE IMAGE FROM THIS BUILD:"
+echo "The hostname device will be "
 echo "login once after reboot without HDD and run 'XXprepareRelease.sh'"
 echo ""
 echo "to continue: reboot with \`sudo shutdown -r now\` and login with user:admin password:raspiblitz"
 echo ""
+
+init 6
