@@ -494,7 +494,8 @@ lndVersion="0.7.1-beta"
 
 # olaoluwa
 PGPpkeys="https://keybase.io/roasbeef/pgp_keys.asc"
-PGPcheck="BD599672C804AF2770869A048B80CD2BB8BD8132"
+#PGPcheck="BD599672C804AF2770869A048B80CD2BB8BD8132"
+PGPcheck="9769140D255C759B1EB77B46A96387A57CAAE94D!"
 # bitconner
 #PGPpkeys="https://keybase.io/bitconner/pgp_keys.asc"
 #PGPcheck="9C8D61868A7C492003B2744EE7D737B67FA592C7"
@@ -519,7 +520,7 @@ if [ ${fingerprint} -lt 1 ]; then
 fi
 gpg --import ./pgp_keys.asc
 sleep 3
-verifyResult=1
+verifyResult=$(gpg --verify manifest-v${lndVersion}.txt.sig 2>&1)
 goodSignature=$(echo ${verifyResult} | grep 'Good signature' -c)
 echo "goodSignature(${goodSignature})"
 correctKey=$(echo ${verifyResult} | tr -d " \t\n\r" | grep "${GPGcheck}" -c)
