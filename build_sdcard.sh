@@ -455,17 +455,50 @@ if [ ${installed} -lt 1 ]; then
   exit 1
 fi
 
+if [ "${baseImage}" = "raspbian" ]; then
+  echo ""
+  echo "*** LITECOIN ***"
+  # based on https://medium.com/@jason.hcwong/litecoin-lightning-with-raspberry-pi-3-c3b931a82347
+
+  # set version (change if update is available)
+  litecoinVersion="0.17.1"
+  litecoinSHA256="7e6f5a1f0b190de01aa20ecf5c5a2cc5a64eb7ede0806bcba983bcd803324d8a"
+  cd /home/admin/download
+
+  # download
+  binaryName="litecoin-${litecoinVersion}-arm-linux-gnueabihf.tar.gz"
+  sudo -u admin wget https://download.litecoin.org/litecoin-${litecoinVersion}/linux/${binaryName}
+
+  # check download
+  binaryChecksum=$(sha256sum ${binaryName} | cut -d " " -f1)
+  if [ "${binaryChecksum}" != "${litecoinSHA256}" ]; then
+    echo "!!! FAIL !!! Downloaded LITECOIN BINARY not matching SHA256 checksum: ${litecoinSHA256}"
+    exit 1
+  fi
+
+  # install
+  sudo -u admin tar -xvf ${binaryName}
+  sudo install -m 0755 -o root -g root -t /usr/local/bin litecoin-${litecoinVersion}/bin/*
+  installed=$(sudo -u admin litecoind --version | grep "${litecoinVersion}" -c)
+  if [ ${installed} -lt 1 ]; then
+    echo ""
+    echo "!!! BUILD FAILED --> Was not able to install litecoind version(${litecoinVersion})"
+    exit 1
+  fi
+fi
+
 # "*** LND ***"
 ## based on https://github.com/Stadicus/guides/blob/master/raspibolt/raspibolt_40_lnd.md#lightning-lnd
 ## see LND releases: https://github.com/lightningnetwork/lnd/releases
 lndVersion="0.7.1-beta"
 
 # olaoluwa
-PGPpkeys="https://keybase.io/roasbeef/pgp_keys.asc"
-PGPcheck="BD599672C804AF2770869A048B80CD2BB8BD8132"
+#PGPpkeys="https://keybase.io/roasbeef/pgp_keys.asc"
+#PGPcheck="BD599672C804AF2770869A048B80CD2BB8BD8132"
+#PGPcheck="9769140D255C759B1EB77B46A96387A57CAAE94D!"
 # bitconner
-#PGPpkeys="https://keybase.io/bitconner/pgp_keys.asc"
-#PGPcheck="9C8D61868A7C492003B2744EE7D737B67FA592C7"
+PGPpkeys="https://keybase.io/bitconner/pgp_keys.asc"
+PGPcheck="9C8D61868A7C492003B2744EE7D737B67FA592C7"
 
 # get LND resources
 cd /home/admin/download
